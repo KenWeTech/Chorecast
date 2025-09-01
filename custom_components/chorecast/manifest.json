@@ -1,0 +1,10 @@
+{
+  "domain": "chorecast",
+  "name": "Chorecast",
+  "version": "0.2.0",
+  "documentation": "https://example.invalid/chorecast",
+  "codeowners": ["@you"],
+  "iot_class": "local_push",
+  "config_flow": true,
+  "requirements": []
+}

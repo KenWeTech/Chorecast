@@ -1,0 +1,31 @@
+{
+  "name": "chorecast",
+  "version": "1.0.0",
+  "description": "A chore management system using NFC.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "chores",
+    "nfc",
+    "home-automation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aedes": "^0.51.0",
+    "bcrypt": "^5.1.1",
+    "bonjour": "^3.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.7.1",
+    "mqtt": "^5.5.0",
+    "node-cron": "^4.2.0",
+    "seedrandom": "^3.0.5",
+    "sqlite3": "^5.1.7",
+    "websocket-stream": "^5.5.2",
+    "ws": "^8.17.0"
+  }
+}

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Chorecast">
+    <meta name="application-name" content="Chorecast">
+    <meta name="theme-color" content="#2c3e50"> 
+    <title>Chorecast</title>
+	<link rel="icon" href="/assets/logo.png" type="image/png">
+	<link rel="apple-touch-icon" href="/assets/logo.png">
+	<link rel="manifest" href="/manifest.json">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <link rel="stylesheet" href="/lib/fontawesome/css/all.min.css">
+
+    <script src="/lib/chartjs/chart.js"></script>
+
+    <script src="/lib/mqtt/mqtt.min.js"></script>
+</head>
+<body>
+    <div id="login-view" class="page-container" style="display: none;">
+        <div class="login-box">
+            <img src="/assets/chorecast-logo.png" alt="Chorecast Logo" id="loginLogo">
+			<h2>Chorecast</h2>
+            <h3 id="random-phrase">Login</h3>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="primary-btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-layout" style="display: none;">
+
+        <header class="mobile-header">
+            <button class="mobile-menu-toggle" id="mobile-menu-open">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo">Chorecast</div>
+            <button class="mobile-menu-toggle" id="mobile-menu-logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </header>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">Chorecast</div>
+                <button class="mobile-menu-toggle close-button" id="mobile-menu-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li id="nav-dashboard"><a href="#" data-page="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li id="nav-users"><a href="#" data-page="users"><i class="fas fa-users"></i> Users</a></li>
+                    <li id="nav-chores"><a href="#" data-page="chores"><i class="fas fa-tasks"></i> Chores</a></li>
+                    <li id="nav-nfc-tags"><a href="#" data-page="tags"><i class="fas fa-tags"></i> Tags</a></li>
+                    <li id="nav-readers"><a href="#" data-page="readers"><i class="fas fa-wifi"></i> Readers</a></li>
+                    <li id="nav-statistics"><a href="#" data-page="statistics"><i class="fas fa-chart-bar"></i> Statistics</a></li>
+                    <li id="nav-settings"><a href="#" data-page="settings"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="user-info">
+                <p>Logged in as: <strong id="logged-in-username">Guest</strong> (<span id="logged-in-user-role"></span>)</p>
+                <p id="connected-reader-status">Reader Status: N/A</p>
+                <button id="logout-btn" class="secondary-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <div id="content-area-inner">
+                <div class="loading-spinner"></div> 
+
+                <section id="page-dashboard" class="page-content">
+                    <div class="page-header">
+                        <h2>Dashboard</h2>
+
+                        <div id="admin-dashboard-toggle" class="hidden"> 
+                            <label for="dashboard-view-mode">View:</label>
+                            <select id="dashboard-view-mode">
+                                <option value="my_chores">My Chores</option>
+                                <option value="all_chores">All Chores</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Chores Due Today</h3>
+                            <p class="stat-number" id="dashboard-due-count">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Chores Completed Today</h3>
+                            <p class="stat-number" id="dashboard-completed-count">0</p>
+                        </div>
+                    </div>
+
+                    <div class="card-section" id="dashboard-reader-status-card">
+                        <h3>My Reader Status</h3>
+                        <p>Connected Reader: <strong id="dashboard-reader-name">N/A</strong></p>
+                        <p>Status: <strong id="dashboard-reader-status">N/A</strong></p>
+                        <p id="dashboard-reader-message" class="dash-info-message"></p>
+                    </div>
+
+                    <div class="dashboard-sections">
+                        <div class="card-section">
+                            <h3>Uncompleted Chores (Today)</h3>
+                            <ul id="uncompleted-chores-list" class="chore-list">
+                                <li>No uncompleted chores.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card-section">
+                            <h3 id="completed-chores-heading">Completed Chores (Today)</h3>
+                            <ul id="completed-chores-list" class="chore-list">
+                                <li>No completed chores yet.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="page-users" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Users</h2>
+                        <button class="primary-btn" id="add-user-btn"><i class="fas fa-plus-circle"></i> Add New User</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="username">Username</th>
+									<th class="center-content" data-sort="isAdmin">Admin</th>
+									<th class="center-content" data-sort="enabled">Enabled</th>
+									<th class="user-table-nfc-tag-id-header">Tag ID</th>
+									<th class="user-table-assigned-reader-id-header">Assigned Reader ID</th>
+									<th class="center-content">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="page-chores" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Chores</h2>
+                        <button class="primary-btn" id="add-chore-btn"><i class="fas fa-plus-circle"></i> Add New Chore</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Name</th>
+									<th>Tag ID</th> <th data-sort="duration">Duration (min)</th>
+									<th data-sort="assignmentType">Assignment Type</th>
+									<th>Schedule</th> <th>Assigned Users</th> <th class="center-content" data-sort="important">Important</th>
+									<th class="center-content" data-sort="enabled">Enabled</th>
+									<th class="center-content">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chores-table-body">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="page-tags" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Tags</h2>
+                        <button class="primary-btn" id="add-tag-btn"><i class="fas fa-plus-circle"></i> Add New Tag</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Friendly Name</th>
+									<th data-sort="tagId">Tag ID</th>
+									<th data-sort="type">Type</th>
+									<th class="center-content">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tags-table-body">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="page-readers" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Readers</h2>
+                        <div>
+                            <button class="secondary-btn" onclick="window.appLogic.loadReaders(window.appState)"><i class="fas fa-sync-alt"></i> Refresh Readers</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Name</th>
+									<th data-sort="macAddress">MAC Address</th>
+									<th data-sort="modelNumber">Model</th>
+									<th data-sort="ipAddress">IP Address</th>
+									<th data-sort="isOnline">Status</th>
+									<th data-sort="lastSeen">Last Seen</th>
+									<th class="center-content">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="readers-table-body">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="page-statistics" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Chore Statistics</h2>
+                    </div>
+
+                    <div class="filters-container">
+                        <div class="form-group">
+                            <label for="stats-user-filter">User:</label>
+                            <select id="stats-user-filter">
+
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stats-period-filter">Period:</label>
+                            <select id="stats-period-filter">
+                                <option value="last_7_days">Last 7 Days</option>
+                                <option value="last_30_days">Last 30 Days</option>
+                                <option value="last_90_days">Last 90 Days</option>
+                                <option value="all_time">All Time</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Total Chores Assigned</h3>
+                            <p class="stat-number" id="total-assigned-count">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Total Chores Completed</h3>
+                            <p class="stat-number" id="total-completed-count">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Total Chores Missed</h3>
+                            <p class="stat-number" id="total-missed-count">0</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-sections">
+                        <div class="card-section chart-section">
+                            <h3>Chore Completion Trends</h3>
+                            <div class="chart-container">
+                                <canvas id="completion-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card-section table-section hidden" id="chore-breakdown-by-user-card">
+                            <h3>Chore Breakdown by User</h3>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Chore (User)</th>
+                                            <th>Assigned</th>
+                                            <th>Completed</th>
+                                            <th>Missed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="chore-breakdown-table-body">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card-section table-section">
+                            <h3>Detailed Activity Log</h3>
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Chore</th>
+                                            <th>User</th>
+                                            <th>Assigned</th>
+                                            <th>Completed</th>
+                                            <th>Missed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stats-table-body">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="page-settings" class="page-content hidden">
+                    <div class="page-header">
+                        <h2>Settings</h2>
+                    </div>
+                    <form id="settings-form" class="card-section" onsubmit="window.appLogic.saveSettings(event, window.appState)">
+                        <h3>Reader Behavior</h3>
+                        <div class="form-group">
+                            <p class="info-message">Determines how a Chorecast Reader is used by the users.</p>
+                            <label for="authMethod">Authentication Method:</label>
+                            <select id="authMethod" name="authMethod">
+                                <option value="reader_assigned">Assigned Reader Mode (User assigned to specific reader)</option>
+                                <option value="user_tag_signin">Tag Sign-In Mode (User must sign-in to use a reader)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <p class="info-message">Tag Sign-In Mode: A specific tag that, when scanned, signs out the currently active user on that reader can be assigned below.</p>
+                            <label for="signOutTagId">Sign-Out Tag:</label>
+                            <select id="signOutTagId" name="signOutTagId">
+                                <option value="">(None)</option>
+
+                            </select>
+                        </div>
+						<div class="soft-divider"></div>
+                        <h3>My Nudgr Settings (Optional)</h3>
+                        <p class="info-message">Integrate with My Nudgr to send notifications for missed or important chores.</p>
+                        <div class="form-group">
+                            <label for="nudgrWebhookUrl">My Nudgr Webhook URL:</label>
+                            <input type="url" id="nudgrWebhookUrl" name="nudgrWebhookUrl" placeholder="http://mynudgr.local:6000">
+                        </div>
+                        <div class="form-group">
+                            <label for="nudgrApiKey">My Nudgr API Key:</label>
+                            <input type="text" id="nudgrApiKey" name="nudgrApiKey" placeholder="Your My Nudgr API Key">
+                        </div>
+                        <div class="form-group">
+                            <label>Send Notifications:</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="nudgrOnMissed" name="nudgrOnMissed">
+                                <label for="nudgrOnMissed">Send notification on missed chores.</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="nudgrOnImportant" name="nudgrOnImportant">
+                                <label for="nudgrOnImportant">Send notification for important chores.</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+							<p class="info-message">Chorecast will send the webhook this much time before the chore's start time. My Nudgr will then send a reminder at the chore's start time.</p>
+                            <label for="nudgrAlertLeadTime">Reminder Lead Time:</label>
+                            <select id="nudgrAlertLeadTime" name="nudgrAlertLeadTime">
+                                <option value="no_alert">No Alert</option>
+                                <option value="0_minutes">At Start Time</option>
+                                <option value="5_minutes">5 Minutes Before</option>
+                                <option value="15_minutes">15 Minutes Before</option>
+                                <option value="30_minutes">30 Minutes Before</option>
+                                <option value="1_hour">1 Hour Before</option>
+                                <option value="2_hours">2 Hours Before</option>
+                                <option value="4_hours">4 Hours Before</option>
+                                <option value="8_hours">8 Hours Before</option>
+                                <option value="12_hours">12 Hours Before</option>
+                                <option value="24_hours">24 Hours Before</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+							<p class="info-message">Turns on 'Relentless Nudge' for chores sent to My Nudgr (Only for chores marked 'Important').</p>
+							<label for="nudgrIsRelentless">Important Mode:</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="nudgrIsRelentless" name="nudgrIsRelentless">
+                                <label for="nudgrIsRelentless">Relentless Nudge.</label>
+                            </div>
+                        </div>
+						<div class="soft-divider"></div>
+                        <h3>Home Assistant Webhook (Optional)</h3>
+                        <p class="info-message">Send events to Home Assistant for automation.</p>
+                        <div class="form-group">
+                            <label for="haWebhookUrl">Home Assistant Webhook URL:</label>
+                            <input type="url" id="haWebhookUrl" name="haWebhookUrl" placeholder="http://homeassistant.local:8123/api/webhook/chorecast">
+                        </div>
+						<div class="form-group">
+                            <div class="soft-divider-t"></div>
+							<label for="useMilitaryTime">Use 24-Hour Time (Military Time):</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="useMilitaryTime" name="useMilitaryTime">
+                                <label for="useMilitaryTime">Display times in 24-hour format (e.g., 14:30 instead of 02:30 PM).</label>
+                            </div>
+							<div class="soft-divider-b"></div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="primary-btn"><i class="fas fa-save"></i> Save Settings</button>
+                        </div>
+						<div class="soft-divider"></div>
+						<div class="settings-group">
+						<h3>Advanced Settings</h3>
+						<p class="info-message">When you might want to clear something.</p>
+						<div class="soft-divider"></div>
+						<h3>Clear Statistics</h3>
+                        <p class="info-message">Permanently delete historical chore statistics. This action cannot be undone.</p>
+                        <div class="form-group">
+                            <label for="clear-stats-user">Select User:</label>
+                            <select id="clear-stats-user">
+                                <option value="all">All Users</option>
+                                </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="clear-stats-period">Select Period:</label>
+                            <select id="clear-stats-period">
+                                <option value="all">All Time</option>
+                                <option value="older_than_7_days">Older than 7 Days</option>
+                                <option value="older_than_30_days">Older than 30 Days</option>
+                                <option value="older_than_90_days">Older than 90 Days</option>
+                            </select>
+                        </div>
+                        <div class="soft-divider"></div>
+                        <div class="form-group">
+                             <button type="button" class="delete-btn" id="clear-stats-btn"><i class="fas fa-eraser"></i> Clear Statistics</button>
+						<div class="soft-divider"></div>
+							<h3>Clear Banned Readers</h3>
+							<p class="info-message">This action will permanently remove all banned mac addresses from the database.</p>
+							<button type="button" id="clearMacBansBtn" class="delete-btn">Clear All</button>
+                        </div>
+						</div>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div id="user-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="user-modal-x-button">&times;</span>
+            <h2>Add New User</h2>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="form-group">
+                    <label for="user-username">Username:</label>
+                    <input type="text" id="user-username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Password:</label>
+                    <input type="password" id="user-password" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                </div>
+
+                <div class="form-group nfc-tag-id-field">
+                    <label for="user-nfc-tag-id">Tag (User Type):</label>
+                    <select id="user-nfc-tag-id">
+                        <option value="">(None)</option>
+
+                    </select>
+                </div>
+                <div class="form-group assigned-reader-id-field">
+                    <label for="user-assigned-reader-id">Assigned Reader:</label>
+                    <select id="user-assigned-reader-id">
+                        <option value="">(None)</option>
+
+                    </select>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="user-isAdmin">
+                    <label for="user-isAdmin">Is Admin</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="user-enabled">
+                    <label for="user-enabled">Enabled</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" id="user-modal-close-button">Cancel</button>
+                    <button type="submit" class="primary-btn" onclick="window.appLogic.saveUser(event, window.appState)">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="chore-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="chore-modal-x-button">&times;</span>
+            <h2>Add New Chore</h2>
+            <form id="chore-form">
+                <input type="hidden" id="chore-id">
+                <div class="form-group">
+                    <label for="chore-name">Chore Name:</label>
+                    <input type="text" id="chore-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="chore-description">Description (Optional):</label>
+                    <textarea id="chore-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="chore-area">Area (e.g., Kitchen, Bathroom):</label>
+                    <input type="text" id="chore-area">
+                </div>
+                <div class="form-group">
+                    <label for="chore-duration">Estimated Duration (minutes):</label>
+                    <input type="number" id="chore-duration" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="chore-nfc-tag-id">Tag (Chore Type):</label>
+                    <select id="chore-nfc-tag-id">
+                        <option value="">(None)</option>
+
+                    </select>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="chore-important">
+                    <label for="chore-important">Important Chore</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="chore-enabled">
+                    <label for="chore-enabled">Enabled</label>
+                </div>
+
+                <h3>Assignment & Schedule</h3>
+                <div class="form-group">
+                    <label for="chore-assignment-type">Assignment Type:</label>
+                    <select id="chore-assignment-type" name="assignmentType">
+                        <option value="manual">Manual Assignment (Specific User per Schedule)</option>
+                        <option value="round_robin">Round Robin (Users assigned in rotation)</option>
+                        <option value="shuffle">Shuffle (Random user assigned each time)</option>
+                    </select>
+                </div>
+
+                <div id="pool-assignment-fields" style="display: none;">
+                    <div class="form-group">
+                        <label>Assigned User Pool:</label>
+                        <div id="chore-assigned-user-pool-custom-select" class="custom-multi-select">
+                            <div class="selected-items-display">
+                                <span class="placeholder">Select users...</span>
+                            </div>
+                            <div class="options-dropdown">
+
+                            </div>
+                        </div>
+                        <p class="info-message">Select users who are part of this chore's assignment pool.</p>
+                    </div>
+                </div>
+
+                <h4>Schedules <button type="button" class="secondary-btn" id="add-schedule-btn"><i class="fas fa-plus"></i> Add Schedule</button></h4>
+                <div id="chore-schedules-container">
+
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" id="chore-modal-close-button">Cancel</button>
+                    <button type="submit" class="primary-btn" onclick="window.appLogic.saveChore(event, window.appState)">Save Chore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="tag-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="tag-modal-x-button">&times;</span>
+            <h2>Add New Tag</h2>
+            <form id="tag-form">
+                <input type="hidden" id="tag-db-id"> 
+                <div class="form-group">
+                    <label for="tag-id-input">Scan Tag ID:</label>
+                    <input type="text" id="tag-id-input" placeholder="Scan tag on reader or enter manually" required>
+                    <button type="button" class="secondary-btn" id="listen-for-tag-btn">Listen for Scan</button>
+
+                    <div class="scan-feedback-message" id="tag-scan-feedback">Place an NFC tag on the reader.</div>
+                </div>
+                <div class="form-group">
+                    <label for="tag-name-input">Friendly Name:</label>
+                    <input type="text" id="tag-name-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="tag-type-select">Type:</label>
+                    <select id="tag-type-select" required>
+                        <option value="chore">Chore</option>
+                        <option value="user">User</option>
+                        <option value="sign_out">Sign-Out</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" id="tag-modal-close-button">Cancel</button>
+                    <button type="submit" class="primary-btn" onclick="window.appLogic.saveTag(event, window.appState)">Save Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="reader-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="reader-modal-x-button">&times;</span>
+            <h2>Edit Reader Name</h2>
+            <form id="reader-form">
+                <div class="form-group">
+                    <label for="reader-mac-address">MAC Address:</label>
+                    <input type="text" id="reader-mac-address" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="reader-name-input">Friendly Name:</label>
+                    <input type="text" id="reader-name-input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" id="reader-modal-close-button">Cancel</button>
+                    <button type="submit" class="primary-btn">Save Name</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="info-modal-x-button">&times;</span>
+            <h2 id="info-modal-title"></h2>
+            <p id="info-modal-message"></p>
+            <div class="modal-actions">
+                <button type="button" class="secondary-btn" id="info-modal-close-button">Close</button>
+                <button type="button" class="primary-btn hidden" id="info-modal-ok-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script type="module" src="/js/main.js"></script>
+	<script src="/js/login-phrase.js"></script>
+</body>
+</html>
+
