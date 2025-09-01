@@ -8,12 +8,18 @@
 
 **Chorecast makes managing household chores effortless and even a little fun.** With a simple web interface paired with **Chorecast Readers** and **chore tags** (NFC tags), family members can log completed tasks instantly with just a tap. And since it runs as a Progressive Web App (**PWA**), you can easily add it to your phone, tablet, or computer for management convenience. Readers can be used without needing to carry another device to mark chores complete, just give it power. 
 
-### Screenshot
+### Take a look
 
 Dashboard
 
 <p align="center">
-  <img src="https://github.com/KenWeTech/Chorecast/blob/main/Chorecast_Dash.png?raw=true" alt="Dashboard" width="600"/>
+  <img src="https://github.com/KenWeTech/Chorecast/blob/main/Chorecast_Dash.png?raw=true" alt="Dashboard" width="800"/>
+</p>
+
+Here is a side-by-side look at scanning. The Chorecast Reader allows you to go about your day scanning chore tags to acknowledge chore completion. The dashboard will show feedback on the scans you performed, offering the choice to carry a device with the app or not.
+
+<p align="center">
+  <img src="https://github.com/KenWeTech/Chorecast/blob/main/Chorecast_Reader_scan.gif?raw=true" alt="Dashboard" width="800"/>
 </p>
 
 
