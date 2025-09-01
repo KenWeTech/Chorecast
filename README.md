@@ -132,7 +132,7 @@ You can also run Chorecast directly with Node.js.
 2.  **Navigate into the directory:**
     
     ```
-    cd chorecast
+    cd chorecast/chorecast
     
     ```
     
@@ -145,7 +145,7 @@ You can also run Chorecast directly with Node.js.
     
 4.  **Configure:**
     
-    -   Copy the `.env.example` file to a new file named `.env`.
+    -   Copy the `example.env` file to a new file named `.env`.
         
     -   Open `.env` and change the `JWT_SECRET` to a long, random string.
         
