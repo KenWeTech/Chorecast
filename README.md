@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/KenWeTech/Chorecast/blob/main/Chorecast/public/assets/logo.png?raw=true" alt="Chorecast Logo" width="200"/>
+  <img src="https://github.com/KenWeTech/Chorecast/blob/main/logo.png?raw=true" alt="Chorecast Logo" width="200"/>
 </p>
 
 # Chorecast: A Chore Management System
