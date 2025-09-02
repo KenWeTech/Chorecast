@@ -73,7 +73,7 @@ Chorecast bridges the gap between digital lists and the real world using two sim
 
 -   **Chorecast Readers:** These are small, Wi-Fi-enabled devices that can easily be carried around without needing another device. When a chore tag is tapped, the reader securely communicates with your Chorecast server to log the activity.
     
-    -   **Interested in getting a pre-built Chorecast Reader?**  [**Find out more here!**](https://diy.cl0ud.top)
+    -   **Interested in getting a pre-built Chorecast Reader?**  [**Find out more here!**](https://ishortn.ink/AGzp7CWKm)
         
 -   **Chore Tags:** These are inexpensive NFC tags that you can stick on or near the location of a chore. You can use any standard NFC sticker, coin, card, or keychain. Once registered in Chorecast, a simple tap is all it takes!
     
