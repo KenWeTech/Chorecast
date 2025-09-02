@@ -100,12 +100,16 @@ services:
     container_name: chorecast
     image: ghcr.io/kenwetech/chorecast:latest # Replace with your Docker Hub image
     restart: unless-stopped
+    # To enable mDNS discovery, uncomment the 'network_mode: "host"' line below.
+    # When using host mode, you must also comment out the 'ports' section below.
+    # network_mode: "host"
     ports:
       - "3737:3737"    # Web UI Port
       - "1887:1887"    # MQTT TCP Port
       - "8887:8887"    # MQTT WebSocket Port
     volumes:
-      - ./chorecast_data:/usr/src/app
+      - ./chorecast_data:/app/data
+      - ./ssl:/app/data
     environment:
       - TZ=America/New_York # Set your timezone
       - JWT_SECRET=a_very_secret_and_long_random_string # CHANGE THIS!
@@ -116,7 +120,9 @@ services:
     
 2.  Create a directory named `chorecast_data` next to your compose file.
     
-3.  Run `docker-compose up -d`.
+3.  Create a directory named `ssl` next to your compose file.
+
+4.  Run `docker-compose up -d`.
     
 
 ### Option 2: Manual Installation
