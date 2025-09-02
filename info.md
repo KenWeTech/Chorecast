@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/KenWeTech/Chorecast/blob/main/logo.png?raw=true" alt="Chorecast Logo" width="200"/>
+</p>
+
 # Chorecast Integration
 
 Welcome to the Chorecast integration for Home Assistant\! This guide will help you bring all your chore tracking data from your Chorecast application directly into your Home Assistant dashboard.
