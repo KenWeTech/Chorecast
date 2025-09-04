@@ -1,7 +1,7 @@
 {
   "name": "chorecast",
   "version": "1.0.0",
-  "description": "A chore management system using NFC.",
+  "description": "A chore management system that makes household tasks easy to track and more engaging with the use of NFC.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,8 +11,8 @@
     "nfc",
     "home-automation"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "KenWeTech",
+  "license": "",
   "dependencies": {
     "aedes": "^0.51.0",
     "bcrypt": "^5.1.1",
@@ -29,3 +29,4 @@
     "ws": "^8.17.0"
   }
 }
+
