@@ -12,7 +12,6 @@
     "home-automation"
   ],
   "author": "KenWeTech",
-  "license": "",
   "dependencies": {
     "aedes": "^0.51.0",
     "bcrypt": "^5.1.1",
@@ -29,4 +28,5 @@
     "ws": "^8.17.0"
   }
 }
+
 
