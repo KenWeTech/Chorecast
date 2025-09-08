@@ -10,7 +10,7 @@ function formatTime(timeString) {
     if (!timeString || timeString === 'N/A') return 'N/A';
 
     const useMilitaryTime = appState.settings && appState.settings.useMilitaryTime === 'true';
-    const timezone = appState.config.timezone || 'America/New_York'; 
+    const timezone = appState.config.timezone; 
 
     try {
 
@@ -1124,12 +1124,13 @@ export async function openReaderModal(readerId, macAddress, name) {
 
     readerForm.reset();
     readerMacAddressInput.value = macAddress;
-    readerNameInput.value = name;
+    const readerToEdit = appState.readers.find(r => r.macAddress === macAddress);
+    readerNameInput.value = readerToEdit ? readerToEdit.friendly_name || '' : '';
     
     readerForm.onsubmit = async (event) => {
         event.preventDefault();
         showLoadingOverlay();
-        const newName = readerNameInput.value;
+        const newName = readerNameInput.value.trim();
         try {
             const response = await api.updateReaderName(macAddress, newName);
             if (response.success) {
@@ -1494,7 +1495,7 @@ function renderUsersTable(users) {
         let readerDisplay = 'N/A';
         if (user.assignedReaderId && appState.readers) {
              const reader = appState.readers.find(r => r.id === user.assignedReaderId);
-             readerDisplay = reader ? `${reader.name} (${reader.macAddress})` : `ID: ${user.assignedReaderId}`;
+             readerDisplay = reader ? `${reader.friendly_name || reader.name} (${reader.macAddress})` : `ID: ${user.assignedReaderId}`;
         }
 
         const nfcColumn = authMethod === 'user_tag_signin' ? `<td>${nfcTagDisplay}</td>` : '';
@@ -1593,14 +1594,14 @@ function renderReadersTable(readers) {
         }
 
         row.innerHTML = `
-            <td>${reader.name || 'N/A'}</td>
+            <td>${reader.friendly_name || reader.name || 'N/A'}</td>
             <td>${reader.macAddress}</td>
 			<td>${reader.modelNumber || 'Unknown'}</td>
             <td>${reader.ipAddress || 'N/A'}</td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${lastSeenFormatted}</td>
             <td class="center-content">
-                <button class="secondary-btn edit-reader-btn" data-id="${reader.id}" data-mac="${reader.macAddress}" data-name="${reader.name || ''}"><i class="fas fa-edit"></i> Edit</button>
+                <button class="secondary-btn edit-reader-btn" data-id="${reader.id}" data-mac="${reader.macAddress}" data-name="${reader.friendly_name || reader.name || ''}"><i class="fas fa-edit"></i> Edit</button>
                 <button class="delete-btn delete-reader-btn" data-id="${reader.id}"><i class="fas fa-trash-alt"></i> Delete</button>
             </td>
         `;
@@ -1936,7 +1937,7 @@ export async function loadNfcReadersForUserDropdown(selectElement) {
             response.data.forEach(reader => {
                 const option = document.createElement('option');
                 option.value = reader.id;
-                option.textContent = `${reader.name || reader.macAddress} (${reader.isOnline ? 'Online' : 'Offline'})`;
+                option.textContent = `${reader.friendly_name || reader.name || reader.macAddress} (${reader.isOnline ? 'Online' : 'Offline'})`;
                 selectElement.appendChild(option);
             });
         } else {

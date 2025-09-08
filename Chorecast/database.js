@@ -137,6 +137,7 @@ const initializeDbSchema = async () => {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 macAddress TEXT UNIQUE NOT NULL,
                 name TEXT NOT NULL,
+				friendly_name TEXT,
                 isOnline INTEGER DEFAULT 0,
                 lastSeen TEXT DEFAULT CURRENT_TIMESTAMP,
                 ipAddress TEXT,
@@ -148,6 +149,9 @@ const initializeDbSchema = async () => {
             await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN modelNumber TEXT;`);
             console.log("Migration: Added 'modelNumber' column to 'chorecast_readers' table.");
         }
+		if (!(await columnExists('chorecast_readers', 'friendly_name'))) {
+			await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN friendly_name TEXT;`);
+		}
         await dbRun(`
             CREATE TABLE IF NOT EXISTS reader_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

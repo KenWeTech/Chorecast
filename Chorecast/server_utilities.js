@@ -470,7 +470,8 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
 					const reader = await dbGet('SELECT * FROM chorecast_readers WHERE macAddress = ?', [readerMac]);
 
 					if (reader) {
-						const readerDisplayName = reader?.name?.trim() !== '' ? reader.name : `Chorecast Reader ${readerMac.replace(/:/g, '').slice(-6).toUpperCase()}`;
+						const readerRecord = await dbGet('SELECT friendly_name, name FROM chorecast_readers WHERE macAddress = ?', [readerMac]);
+						const readerDisplayName = readerRecord ? (readerRecord.friendly_name || readerRecord.name) : readerName;
 
 						aedes.publish({ topic: `chorecast/reader/${readerMac}/command`, payload: '{"command":"registered", "status":"success"}', qos: 0, retain: false });
 
@@ -500,7 +501,8 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
             try {
                 await dbRun('UPDATE chorecast_readers SET isOnline = 0, lastSeen = CURRENT_TIMESTAMP WHERE macAddress = ?', [readerMac]);
                 
-                const readerDisplayName = reader?.name && reader.name.trim() !== '' ? reader.name : `Chorecast Reader ${readerMac.replace(/:/g, '').slice(-6).toUpperCase()}`;
+				const readerRecord = await dbGet('SELECT friendly_name, name FROM chorecast_readers WHERE macAddress = ?', [readerMac]);
+				const readerDisplayName = readerRecord ? (readerRecord.friendly_name || readerRecord.name) : readerName;
 
                 aedes.publish({
                     topic: `chorecast/reader/${readerMac}/status`,
@@ -545,7 +547,9 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
                 return;
             }
 
-            const readerDisplayName = name && name.trim() !== '' ? name : `Chorecast Reader ${macAddress.replace(/:/g, '').slice(-6).toUpperCase()}`;
+            const readerName = name && name.trim() !== '' ? name : `Chorecast Reader ${macAddress.replace(/:/g, '').slice(-6).toUpperCase()}`;
+			const readerRecord = await dbGet('SELECT friendly_name, name FROM chorecast_readers WHERE macAddress = ?', [macAddress]);
+			const readerDisplayName = readerRecord ? (readerRecord.friendly_name || readerRecord.name) : readerName;
 
             await dbRun(`
                 INSERT INTO chorecast_readers (macAddress, name, isOnline, lastSeen, modelNumber, ipAddress)
@@ -556,10 +560,11 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
 					lastSeen = CURRENT_TIMESTAMP,
 					modelNumber = modelNumber, 
 					ipAddress = ipAddress; 
-				`, [macAddress, readerDisplayName, model, ipAddress]); 
+				`, [macAddress, readerName, model, ipAddress]); 
 				
                 aedes.publish({ topic: `chorecast/reader/${macAddress}/command`, payload: '{"command":"registered", "status":"success"}', qos: 0, retain: false });
-                aedes.publish({
+                
+				aedes.publish({
                     topic: `chorecast/reader/${macAddress}/status`,
                     payload: JSON.stringify({ macAddress: macAddress, isOnline: true, name: readerDisplayName, modelNumber: model, ipAddress: ipAddress }),
                     qos: 0, retain: false
@@ -585,7 +590,9 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
                 const statusData = JSON.parse(payload);
                 const { macAddress, isOnline, name, ipAddress, model, modelHash } = statusData;
 
-                const readerDisplayName = name && name.trim() !== '' ? name : `Chorecast Reader ${macAddress.replace(/:/g, '').slice(-6).toUpperCase()}`;
+                const readerName = name && name.trim() !== '' ? name : `Chorecast Reader ${macAddress.replace(/:/g, '').slice(-6).toUpperCase()}`;
+				const readerRecord = await dbGet('SELECT friendly_name, name FROM chorecast_readers WHERE macAddress = ?', [macAddress]);
+				const readerDisplayName = readerRecord ? (readerRecord.friendly_name || readerRecord.name) : readerName;
                 
                 if (macAddress) {
                     await dbRun(`
@@ -595,11 +602,11 @@ function initializeMqttBroker(mqttTcpPort, mqttWsPort) {
                             name = EXCLUDED.name,
                             isOnline = 1,
                             lastSeen = CURRENT_TIMESTAMP,
-                            ipAddress = ipAddress, 
-							modelNumber = modelNumber; 
-                    `, [macAddress, readerDisplayName, ipAddress, model]);
+                            ipAddress = COALESCE(EXCLUDED.ipAddress, ipAddress), 
+							modelNumber = COALESCE(EXCLUDED.modelNumber, modelNumber); 
+                    `, [macAddress, readerName, ipAddress, model]);
                     
-                    aedes.publish({ topic: `chorecast/reader/${macAddress}/command`, payload: '{"command":"status_updated", "status":"status_updated"}', qos: 0, retain: false });
+					aedes.publish({ topic: `chorecast/reader/${macAddress}/command`, payload: '{"command":"status_updated", "status":"status_updated"}', qos: 0, retain: false });
                     
                     aedes.publish({
                         topic: `chorecast/reader/${macAddress}/status`, 

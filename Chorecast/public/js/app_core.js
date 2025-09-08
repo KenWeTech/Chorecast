@@ -321,8 +321,8 @@ export const api = {
     deleteReader: function(id) {
         return this._sendRequest('DELETE', `/readers/${id}`);
     },
-    updateReaderName: function(macAddress, name) {
-        return this._sendRequest('PUT', `/readers/${macAddress}/name`, { name });
+    updateReaderName: function(macAddress, friendly_name) {
+        return this._sendRequest('PUT', `/readers/${macAddress}/name`, { friendly_name });
     },
     getTags: function() {
         return this._sendRequest('GET', '/tags');

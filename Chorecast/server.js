@@ -502,7 +502,7 @@ app.delete('/api/tags/:id', adminOnly, async (req, res) => {
 
 app.get('/api/readers', async (req, res) => {
     try {
-        const readers = await dbAll('SELECT id, macAddress, name, ipAddress, isOnline, lastSeen, modelNumber FROM chorecast_readers');
+        const readers = await dbAll('SELECT id, macAddress, name, friendly_name, ipAddress, isOnline, lastSeen, modelNumber FROM chorecast_readers');
         sendResponse(res, true, 'NFC readers retrieved successfully.', readers);
     } catch (err) {
         console.error("Error retrieving NFC readers:", err.message);
@@ -512,12 +512,19 @@ app.get('/api/readers', async (req, res) => {
 
 app.put('/api/readers/:macAddress/name', adminOnly, async (req, res) => {
     const { macAddress } = req.params;
-    const { name } = req.body;
-    if (!name) {
-        return sendResponse(res, false, 'Reader name is required.', null, 400);
+    const { friendly_name } = req.body;
+    if (friendly_name === undefined) { 
+        return sendResponse(res, false, 'Friendly name is required.', null, 400);
     }
     try {
-        const result = await dbRun('UPDATE chorecast_readers SET name = ? WHERE macAddress = ?', [name, macAddress]);
+        let sql = 'UPDATE chorecast_readers SET friendly_name = ? WHERE macAddress = ?';
+        let params = [friendly_name, macAddress];
+        if (friendly_name === "") {
+            sql = 'UPDATE chorecast_readers SET friendly_name = NULL WHERE macAddress = ?';
+            params = [macAddress];
+        }
+
+        const result = await dbRun(sql, params);
         if (result.changes > 0) {
             sendResponse(res, true, 'Reader name updated successfully.');
         } else {
@@ -572,13 +579,13 @@ app.get('/api/user/reader-status', async (req, res) => {
     const userId = req.user.id; 
     try {
         
-        let reader = await dbGet('SELECT r.name, r.macAddress, r.isOnline FROM chorecast_readers r JOIN users u ON r.id = u.assignedReaderId WHERE u.id = ?', [userId]);
+        let reader = await dbGet('SELECT r.name, r.macAddress, r.isOnline, r.friendly_name FROM chorecast_readers r JOIN users u ON r.id = u.assignedReaderId WHERE u.id = ?', [userId]);
 
         if (!reader) {
             const session = await dbGet('SELECT userId, readerMacAddress FROM reader_sessions WHERE userId = ?', [userId]);
             if (session) {
                 
-                const sessionReader = await dbGet('SELECT name, isOnline FROM chorecast_readers WHERE macAddress = ?', [session.readerMacAddress]);
+                const sessionReader = await dbGet('SELECT name, isOnline, friendly_name FROM chorecast_readers WHERE macAddress = ?', [session.readerMacAddress]);
                 if (sessionReader) {
                     reader = {
                         name: sessionReader.name,
@@ -591,7 +598,7 @@ app.get('/api/user/reader-status', async (req, res) => {
 
         if (reader) {
             sendResponse(res, true, 'Reader status retrieved.', {
-                readerName: reader.name || `Reader ${reader.macAddress.slice(-6)}`,
+                readerName: reader.friendly_name || reader.name || `Reader ${reader.macAddress.slice(-6)}`,
                 isOnline: reader.isOnline === 1 
             });
         } else {
