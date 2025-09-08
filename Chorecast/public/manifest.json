@@ -1,7 +1,7 @@
 {
   "name": "Chorecast",
   "short_name": "Chorecast",
-  "description": "A chore management system using NFC.",
+  "description": "A chore management system that makes household tasks easy to track and more engaging with the use of NFC.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f7f6",
@@ -19,3 +19,4 @@
     }
   ]
 }
+
