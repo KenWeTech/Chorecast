@@ -101,9 +101,7 @@ const updateDailyChoreStats = async (statDate, choreId, userId, choreName, userN
             ON CONFLICT(statDate, choreId, userId) DO UPDATE SET
                 choreName = EXCLUDED.choreName,
                 userName = EXCLUDED.userName,
-                -- START OF REQUIRED CHANGE: Fix assignedCount doubling
-                assignedCount = CASE WHEN EXCLUDED.assignedCount > 0 THEN assignedCount + EXCLUDED.assignedCount ELSE assignedCount END,
-                -- END OF REQUIRED CHANGE
+                assignedCount = MAX(assignedCount, EXCLUDED.assignedCount),
                 completedCount = completedCount + EXCLUDED.completedCount,
                 missedCount = missedCount + EXCLUDED.missedCount
                 ${completionTimestampUpdateClause}
