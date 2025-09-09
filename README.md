@@ -82,16 +82,32 @@ Chorecast bridges the gap between digital lists and the real world using two sim
 
 Chorecast is designed to be self-hosted on your own network. You can get it running in minutes.
 
-### Prerequisites
+### Option 1: Windows Installer (Easiest)
 
--   **Node.js** (v18.x or later)
+For the simplest setup on Windows, use the Chorecast installer:
+
+1.  **Download and Run**  
+    Download the latest **`Chorecast_Setup_vX.X.X.exe`** from the [Releases](https://github.com/kenwetech/chorecast/releases) page and run the installer.
     
--   **NPM**
+2.  **Allow Firewall Access**  
+    The first time you launch Chorecast, Windows Defender or other firewall software may prompt you to allow network access. **Be sure to allow access** so Chorecast can communicate with readers and be accessible across your network.
     
+3.  **Runs in the Background**  
+    Chorecast runs quietly in your system tray. Closing the window won’t stop the server — readers and dashboards will stay connected. To reopen the main window, just click the Chorecast tray icon.
+    
+4.  **Access the Web Interface**  
+    Once running, you can access Chorecast not only through the main window, but also from any device on your local network using one of the following URLs:
+    
+    -   **[http://chorecast.local:3737](http://chorecast.local:3737/)** – if your device supports `.local` resolution
+        
+    -   **[http://localhost:3737](http://localhost:3737/)** – from the machine running Chorecast
+        
+    -   **http://[your-machine-ip]:3737** – replace `[your-machine-ip]` with your computer’s IP address for access from other devices on the same network
+  
 
-### Option 1: Docker (Recommended)
+### Option 2: Docker (Recommended)
 
-The easiest way to run Chorecast is with Docker. A `docker-compose.yml` file is the simplest approach:
+If you're not using Windows, the easy way to run Chorecast is with Docker. A `docker-compose.yml` file is the simplest approach:
 
 ```
 version: '3.8'
@@ -125,9 +141,17 @@ services:
 4.  Run `docker-compose up -d`.
     
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 
 You can also run Chorecast directly with Node.js.
+
+#### Prerequisites
+
+-   **Node.js** (v18.x or later)
+    
+-   **NPM**
+
+### Steps: 
 
 1.  **Download the code:**
     
