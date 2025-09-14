@@ -82,7 +82,13 @@ Chorecast bridges the gap between digital lists and the real world using two sim
 
 Chorecast is designed to be self-hosted on your own network. You can get it running in minutes.
 
-### Option 1: Windows Installer (Easiest)
+### Option 1: Using An Installer (Easiest)
+
+This section provides instructions for installing Chorecast using native installers for various operating systems.
+
+----------
+
+#### Windows (exe)
 
 For the simplest setup on Windows, use the Chorecast installer:
 
@@ -104,6 +110,99 @@ For the simplest setup on Windows, use the Chorecast installer:
         
     -   **http://[your-machine-ip]:3737** – replace `[your-machine-ip]` with your computer’s IP address for access from other devices on the same network
   
+----------
+
+#### macOS (dmg)
+
+On macOS, you'll use the **`.dmg`** installer. Since we don't have an Apple Developer License, macOS will flag the application as from an unidentified developer.
+
+1.  Download and Open
+    
+    Download the correct .dmg file for your system (either Chorecast_vX.X.X.dmg for Intel or Chorecast_vX.X.X_arm64.dmg for Apple Silicon) from the Releases page. Open the file to mount it.
+    
+2.  Move to Applications
+    
+    Drag the Chorecast application into your Applications folder.
+    
+3.  Allow the App
+    
+    The first time you launch it, you'll need to bypass security warnings. Go to System Settings > Privacy & Security and look for a message about Chorecast being blocked. Click Open Anyway and confirm the action. You may need to repeat this if a warning appears again.
+    
+4.  Allow Network Access
+    
+    The application will likely request permission to access your local network. You must allow this for Chorecast to function correctly. If your firewall blocks the application, you'll need to manually add an exception in your System Settings to allow incoming connections.
+    
+5.  Runs in the Background
+    
+    Chorecast runs quietly in your menu bar. Closing the window won’t stop the server — readers and dashboards will stay connected. To reopen the main window, click the Chorecast icon in your menu bar.
+    
+6.  Access the Web Interface
+    
+    Once running, you can access Chorecast from any device on your local network using one of the following URLs:
+    
+    -   **[http://chorecast.local:3737](https://www.google.com/search?q=http://chorecast.local:3737/)** – if your device supports `.local` resolution
+        
+    -   **[http://localhost:3737](https://www.google.com/search?q=http://localhost:3737/)** – from the machine running Chorecast
+        
+    -   **http://[your-machine-ip]:3737** – replace `[your-machine-ip]` with your computer’s IP address for access from other devices on the same network
+        
+
+----------
+
+#### Linux (.deb or AppImage)
+
+On Linux, you have two options: a **`.deb`** package for Debian-based distributions or a universal **AppImage**.
+
+##### For Debian/Ubuntu (.deb)
+
+1.  Download and Install
+    
+    Download the correct .deb file (either chorecast_vX.X.X_amd64.deb for 64-bit Intel/AMD or chorecast_vX.X.X_arm64.deb for ARM-based systems) from the Releases page. You can install it using your system's package manager or from the command line:
+    
+    `sudo dpkg -i chorecast_vX.X.X_amd64.deb`
+    
+2.  Allow Network Access
+    
+    You may need to manually configure your firewall (e.g., ufw) to allow incoming connections on port 3737 for Chorecast to be accessible across your network.
+    
+3.  Access the Web Interface
+    
+    Once running, you can access Chorecast from any device on your local network using one of the following URLs:
+    
+    -   **[http://chorecast.local:3737](https://www.google.com/search?q=http://chorecast.local:3737/)** – if your device supports `.local` resolution
+        
+    -   **[http://localhost:3737](https://www.google.com/search?q=http://localhost:3737/)** – from the machine running Chorecast
+        
+    -   **http://[your-machine-ip]:3737** – replace `[your-machine-ip]` with your computer’s IP address for access from other devices on the same network
+        
+
+##### For AppImage
+
+1.  Download and Make Executable
+    
+    Download the correct .AppImage file (either Chorecast_vX.X.X.AppImage for 64-bit Intel/AMD or Chorecast_vX.X.X_arm64.AppImage for ARM) from the Releases page. Then, make it executable from the terminal:
+    
+    `chmod +x Chorecast_vX.X.X.AppImage`
+    
+2.  Run the AppImage
+    
+    Launch the application by double-clicking it or from the terminal:
+    
+    `./Chorecast_vX.X.X.AppImage`
+    
+3.  Allow Network Access
+    
+    You may need to manually configure your firewall (e.g., ufw) to allow incoming connections on port 3737 for Chorecast to be accessible across your network.
+    
+4.  Access the Web Interface
+    
+    Once running, you can access Chorecast from any device on your local network using one of the following URLs:
+    
+    -   **[http://chorecast.local:3737](https://www.google.com/search?q=http://chorecast.local:3737/)** – if your device supports `.local` resolution
+        
+    -   **[http://localhost:3737](https://www.google.com/search?q=http://localhost:3737/)** – from the machine running Chorecast
+        
+    -   **http://[your-machine-ip]:3737** – replace `[your-machine-ip]` with your computer’s IP address for access from other devices on the same network
 
 ### Option 2: Docker (Recommended)
 
