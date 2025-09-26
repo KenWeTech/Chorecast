@@ -144,14 +144,6 @@ const initializeDbSchema = async () => {
                 modelNumber TEXT
             );
         `);
-
-        if (!(await columnExists('chorecast_readers', 'modelNumber'))) {
-            await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN modelNumber TEXT;`);
-            console.log("Migration: Added 'modelNumber' column to 'chorecast_readers' table.");
-        }
-		if (!(await columnExists('chorecast_readers', 'friendly_name'))) {
-			await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN friendly_name TEXT;`);
-		}
         await dbRun(`
             CREATE TABLE IF NOT EXISTS reader_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -191,45 +183,14 @@ const initializeDbSchema = async () => {
                 UNIQUE(choreId, sentDate, reminderType)
             );
         `);
-
-        const nfcTagsTableExists = await dbGet("SELECT name FROM sqlite_master WHERE type='table' AND name='nfc_tags';");
-        const nfcTagsIdColumnExists = nfcTagsTableExists && await columnExists('nfc_tags', 'id');
-
-        if (nfcTagsTableExists && !nfcTagsIdColumnExists) {
-            console.warn("Migration: 'id' column missing from 'nfc_tags' table. Performing data migration...");
-            await dbRun('ALTER TABLE nfc_tags RENAME TO old_nfc_tags;');
-            console.log("Migration: Renamed 'nfc_tags' to 'old_nfc_tags'.");
-
-            await dbRun(`
-                CREATE TABLE nfc_tags (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    tagId TEXT UNIQUE NOT NULL,
-                    type TEXT DEFAULT 'chore'
-                );
-            `);
-            console.log("Migration: Created new 'nfc_tags' table with 'id' column.");
-
-            await dbRun(`
-                INSERT INTO nfc_tags (name, tagId, type)
-                SELECT name, tagId, COALESCE(type, 'chore') FROM old_nfc_tags;
-            `);
-            console.log("Migration: Copied data to new 'nfc_tags' table.");
-
-            await dbRun('DROP TABLE old_nfc_tags;');
-            console.log("Migration: Dropped 'old_nfc_tags' table.");
-            console.log("Migration: 'nfc_tags' table successfully migrated with 'id' column.");
-        } else if (!nfcTagsTableExists) {
-            await dbRun(`
-                CREATE TABLE IF NOT EXISTS nfc_tags (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    tagId TEXT UNIQUE NOT NULL,
-                    type TEXT DEFAULT 'chore'
-                );
-            `);
-            console.log("Migration: 'nfc_tags' table created for the first time.");
-        }
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS nfc_tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                tagId TEXT UNIQUE NOT NULL,
+                type TEXT DEFAULT 'chore'
+            );
+        `);
 
         if (!(await columnExists('chorecast_readers', 'ipAddress'))) { await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN ipAddress TEXT;`); }
         if (!(await columnExists('chorecast_readers', 'lastSeen'))) { await dbRun(`ALTER TABLE chorecast_readers ADD COLUMN lastSeen TEXT DEFAULT CURRENT_TIMESTAMP;`); }
@@ -259,28 +220,6 @@ const initializeDbSchema = async () => {
         if (!(await columnExists('chores', 'area'))) { await dbRun(`ALTER TABLE chores ADD COLUMN area TEXT;`); }
         if (!(await columnExists('chores', 'description'))) { await dbRun(`ALTER TABLE chores ADD COLUMN description TEXT;`); }
         if (!(await columnExists('chores', 'name'))) { await dbRun(`ALTER TABLE chores ADD COLUMN name TEXT;`); }
-
-        const choreLogTableExists = await dbGet("SELECT name FROM sqlite_master WHERE type='table' AND name='chore_log';");
-        const choreLogAssignedDateExists = choreLogTableExists && await columnExists('chore_log', 'assignedDate');
-        const choreLogCompletionTimestampExists = choreLogTableExists && await columnExists('chore_log', 'completionTimestamp');
-        const choreLogCompletedAtExists = choreLogTableExists && await columnExists('chore_log', 'completedAt');
-
-        if (choreLogTableExists && !choreLogAssignedDateExists) {
-            console.warn("Migration: 'assignedDate' column missing from 'chore_log' table. Adding column...");
-            await dbRun(`ALTER TABLE chore_log ADD COLUMN assignedDate TEXT;`);
-            if (choreLogCompletedAtExists) {
-                console.log("Migration: Backfilling 'assignedDate' with date part of 'completedAt' in 'chore_log'.");
-                await dbRun(`UPDATE chore_log SET assignedDate = SUBSTR(completedAt, 1, 10) WHERE assignedDate IS NULL;`);
-            } else if (choreLogCompletionTimestampExists) {
-                console.log("Migration: Backfilling 'assignedDate' with date part of 'completionTimestamp' in 'chore_log'.");
-                await dbRun(`UPDATE chore_log SET assignedDate = SUBSTR(completionTimestamp, 1, 10) WHERE assignedDate IS NULL;`);
-            }
-        }
-
-        if (choreLogTableExists && choreLogCompletionTimestampExists && !choreLogCompletedAtExists) {
-            console.warn("Migration: Renaming 'completionTimestamp' to 'completedAt' in 'chore_log'.");
-            await dbRun(`ALTER TABLE chore_log RENAME COLUMN completionTimestamp TO completedAt;`);
-        }
 
         if (!(await columnExists('chore_log', 'status'))) { await dbRun(`ALTER TABLE chore_log ADD COLUMN status TEXT DEFAULT 'completed';`); }
         if (!(await columnExists('chore_log', 'readerMacAddress'))) { await dbRun(`ALTER TABLE chore_log ADD COLUMN readerMacAddress TEXT;`); }
@@ -326,5 +265,5 @@ module.exports = {
     dbGet,
     dbAll,
     dbRun,
-    initializeDbSchema,
+    initializeDbSchema
 };
