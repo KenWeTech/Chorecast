@@ -20,20 +20,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-initializeDbSchema().catch(err => {
-    console.error("Failed to initialize database schema:", err);
-    process.exit(1);
-});
-
-initializeMqttBroker(
-    parseInt(process.env.MQTT_PORT || 1887),
-    parseInt(process.env.MQTT_WS_PORT || 8887)
-);
-
-(async () => {
-    await generateAndSendDailySummaryWebhook();
-})();
-
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; 
@@ -1203,77 +1189,94 @@ cron.schedule('*/10 * * * *', async () => {
     timezone: TIMEZONE
 });
 
-const port = process.env.PORT || 3737;
-const useHttps = process.env.HTTPS === 'true';
+initializeDbSchema()
+    .then(() => {
+        console.log("Database schema is ready. Starting services...");
 
-let serverInstance;
+        initializeMqttBroker(
+            parseInt(process.env.MQTT_PORT || 1887),
+            parseInt(process.env.MQTT_WS_PORT || 8887)
+        );
 
-if (useHttps) {
-    const httpsPort = process.env.HTTPS_PORT || 3443;
-    const sslOptions = {
-        key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem')),
-        cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'))
-    };
-    serverInstance = https.createServer(sslOptions, app).listen(httpsPort, () => {
-        console.log(`HTTPS server running on port ${httpsPort}`);
-        try {
-            const service = bonjour.publish({
-                name: 'Chorecast Web Server (HTTPS)', 
-                type: 'https',
-                port: httpsPort,
-                protocol: 'tcp',
-                host: 'chorecast.local' 
+        (async () => {
+            await generateAndSendDailySummaryWebhook();
+        })();
+
+        const port = process.env.PORT || 3737;
+        const useHttps = process.env.HTTPS === 'true';
+        let serverInstance;
+
+        if (useHttps) {
+            const httpsPort = process.env.HTTPS_PORT || 3443;
+            const sslOptions = {
+                key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'))
+            };
+            serverInstance = https.createServer(sslOptions, app).listen(httpsPort, () => {
+                console.log(`HTTPS server running on port ${httpsPort}`);
+                try {
+                    const service = bonjour.publish({
+                        name: 'Chorecast Web Server (HTTPS)',
+                        type: 'https',
+                        port: httpsPort,
+                        protocol: 'tcp',
+                        host: 'chorecast.local'
+                    });
+                    service.on('up', () => {
+                        console.log(`[mDNS] HTTPS service 'Chorecast Web Server (HTTPS)' is up and discoverable at https://chorecast.local:${httpsPort}`);
+                    });
+                    service.on('error', (err) => {
+                        console.error(`[mDNS Error] Failed to publish HTTPS service: ${err.message}`);
+                    });
+                } catch (e) {
+                    console.error(`[mDNS Error] Exception while trying to publish HTTP service: ${e.message}`);
+                }
             });
-            service.on('up', () => {
-                console.log(`[mDNS] HTTPS service 'Chorecast Web Server (HTTPS)' is up and discoverable at https://chorecast.local:${httpsPort}`);
+        } else {
+            serverInstance = http.createServer(app).listen(port, () => {
+                console.log(`HTTP server running on port ${port}`);
+                try {
+                    const service = bonjour.publish({
+                        name: 'Chorecast Web Server (HTTP)',
+                        type: 'http',
+                        port: port,
+                        protocol: 'tcp',
+                        host: 'chorecast.local'
+                    });
+                    service.on('up', () => {
+                        console.log(`[mDNS] HTTP service 'Chorecast Web Server (HTTP)' is up and discoverable at http://chorecast.local:${port}`);
+                    });
+                    service.on('error', (err) => {
+                        console.error(`[mDNS Error] Failed to publish HTTP service: ${err.message}`);
+                    });
+                } catch (e) {
+                    console.error(`[mDNS Error] Exception while trying to publish HTTP service: ${e.message}`);
+                }
             });
-            service.on('error', (err) => {
-                console.error(`[mDNS Error] Failed to publish HTTPS service: ${err.message}`);
-            });
-        } catch (e) {
-            console.error(`[mDNS Error] Exception while trying to publish HTTP service: ${e.message}`);
         }
-    });
-} else {
-    serverInstance = http.createServer(app).listen(port, () => {
-        console.log(`HTTP server running on port ${port}`);
-        try {
-            const service = bonjour.publish({
-                name: 'Chorecast Web Server (HTTP)', 
-                type: 'http',
-                port: port,
-                protocol: 'tcp',
-                host: 'chorecast.local' 
+        
+        process.on('SIGTERM', () => {
+            console.log('[Server Shutdown] Stopping mDNS service...');
+            bonjour.unpublishAll();
+            bonjour.destroy();
+            serverInstance.close(() => {
+                console.log('Server closed.');
+                process.exit(0);
             });
-            service.on('up', () => {
-                console.log(`[mDNS] HTTP service 'Chorecast Web Server (HTTP)' is up and discoverable at http://chorecast.local:${port}`);
+        });
+
+        process.on('SIGINT', () => {
+            console.log('[Server Shutdown] Stopping mDNS service...');
+            bonjour.unpublishAll();
+            bonjour.destroy();
+            serverInstance.close(() => {
+                console.log('Server closed.');
+                process.exit(0);
             });
-            service.on('error', (err) => {
-                console.error(`[mDNS Error] Failed to publish HTTP service: ${err.message}`);
-            });
-        } catch (e) {
-            console.error(`[mDNS Error] Exception while trying to publish HTTP service: ${e.message}`);
-        }
-    });
-}
+        });
 
-process.on('SIGTERM', () => {
-    console.log('[Server Shutdown] Stopping mDNS service...');
-    bonjour.unpublishAll();
-    bonjour.destroy();
-    serverInstance.close(() => {
-        console.log('Server closed.');
-        process.exit(0);
+    })
+    .catch(err => {
+        console.error("Failed to start server due to a critical initialization error:", err.message);
+        process.exit(1);
     });
-});
-
-process.on('SIGINT', () => {
-    console.log('[Server Shutdown] Stopping mDNS service...');
-    bonjour.unpublishAll();
-    bonjour.destroy();
-    serverInstance.close(() => {
-        console.log('Server closed.');
-        process.exit(0);
-    });
-});
-
