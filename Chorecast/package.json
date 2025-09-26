@@ -1,6 +1,6 @@
 {
   "name": "chorecast",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "description": "A chore management system that makes household tasks easy to track and more engaging with the use of NFC.",
   "main": "server.js",
   "scripts": {
@@ -28,3 +28,4 @@
     "ws": "^8.17.0"
   }
 }
+
